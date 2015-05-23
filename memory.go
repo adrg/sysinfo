@@ -63,8 +63,8 @@ func MemoryInfo() (*Memory, error) {
 			return nil, ErrInvalidFileFormat
 		}
 
-		section := strings.ToLower(strings.TrimSuffix(fields[0], ":"))
-		switch section {
+		key := strings.ToLower(strings.TrimSuffix(fields[0], ":"))
+		switch key {
 		case "memtotal":
 			mem.Total = value
 		case "memfree":
