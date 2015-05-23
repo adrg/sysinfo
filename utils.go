@@ -7,9 +7,9 @@ import (
 )
 
 var (
-	UserNotFound      error = errors.New("User not found")
-	GroupNotFound     error = errors.New("Group not found")
-	InvalidFileFormat error = errors.New("Invalid file format")
+	ErrUserNotFound      = errors.New("user not found")
+	ErrGroupNotFound     = errors.New("group not found")
+	ErrInvalidFileFormat = errors.New("invalid file format")
 )
 
 func readSingleValueFile(path string) (string, error) {

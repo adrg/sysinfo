@@ -58,7 +58,7 @@ func GroupByID(id uint64) (*Group, error) {
 		}
 	}
 
-	return nil, GroupNotFound
+	return nil, ErrGroupNotFound
 }
 
 func GroupByName(name string) (*Group, error) {
@@ -73,7 +73,7 @@ func GroupByName(name string) (*Group, error) {
 		}
 	}
 
-	return nil, GroupNotFound
+	return nil, ErrGroupNotFound
 }
 
 func Groups() ([]*Group, error) {
@@ -89,7 +89,7 @@ func Groups() ([]*Group, error) {
 	for scanner.Scan() {
 		fields := strings.Split(scanner.Text(), ":")
 		if len(fields) != 4 {
-			return nil, InvalidFileFormat
+			return nil, ErrInvalidFileFormat
 		}
 
 		id, err := strconv.ParseUint(fields[2], 10, 64)

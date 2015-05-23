@@ -62,7 +62,7 @@ func UserByID(id uint64) (*User, error) {
 		}
 	}
 
-	return nil, UserNotFound
+	return nil, ErrUserNotFound
 }
 
 func UserByName(username string) (*User, error) {
@@ -77,7 +77,7 @@ func UserByName(username string) (*User, error) {
 		}
 	}
 
-	return nil, UserNotFound
+	return nil, ErrUserNotFound
 }
 
 func Users() ([]*User, error) {
@@ -93,7 +93,7 @@ func Users() ([]*User, error) {
 	for scanner.Scan() {
 		fields := strings.Split(scanner.Text(), ":")
 		if len(fields) != 7 {
-			return nil, InvalidFileFormat
+			return nil, ErrInvalidFileFormat
 		}
 
 		id, err := strconv.ParseUint(fields[2], 10, 64)

@@ -84,7 +84,7 @@ func Uptime() (float64, error) {
 
 	fields := strings.Fields(content)
 	if len(fields) != 2 {
-		return 0.0, InvalidFileFormat
+		return 0.0, ErrInvalidFileFormat
 	}
 
 	return strconv.ParseFloat(fields[0], 64)

@@ -55,12 +55,12 @@ func MemoryInfo() (*Memory, error) {
 	for scanner.Scan() {
 		fields := strings.Fields(scanner.Text())
 		if len(fields) < 2 {
-			return nil, InvalidFileFormat
+			return nil, ErrInvalidFileFormat
 		}
 
 		value, err := strconv.ParseUint(fields[1], 10, 64)
 		if err != nil {
-			return nil, InvalidFileFormat
+			return nil, ErrInvalidFileFormat
 		}
 
 		section := strings.ToLower(strings.TrimSuffix(fields[0], ":"))
