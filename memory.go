@@ -6,8 +6,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/adrg/unit"
 )
 
 type Memory struct {
@@ -22,8 +20,6 @@ type Memory struct {
 	SwapUsed   uint64
 	SwapCached uint64
 	Buffers    uint64
-
-	Unit unit.Memory
 }
 
 func (m *Memory) PercentUsed() float64 {
@@ -43,7 +39,7 @@ func (m *Memory) PercentSwapFree() float64 {
 }
 
 func MemoryInfo() (*Memory, error) {
-	mem := &Memory{Unit: unit.Kibibyte}
+	mem := &Memory{}
 
 	file, err := os.Open("/proc/meminfo")
 	if err != nil {
