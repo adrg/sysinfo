@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-type Node struct {
+type NodeInfo struct {
 	Hostname      string
 	Domain        string
 	Architecture  string
@@ -16,8 +16,8 @@ type Node struct {
 	Uptime        float64
 }
 
-func NodeInfo() (*Node, error) {
-	node := &Node{}
+func Node() (*NodeInfo, error) {
+	node := &NodeInfo{}
 
 	var err error
 	if node.Hostname, err = Hostname(); err != nil {

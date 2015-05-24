@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-type Memory struct {
+type MemoryInfo struct {
 	Total      uint64
 	Free       uint64
 	Used       uint64
@@ -22,24 +22,24 @@ type Memory struct {
 	Buffers    uint64
 }
 
-func (m *Memory) PercentUsed() float64 {
+func (m *MemoryInfo) PercentUsed() float64 {
 	return float64(m.Used) / float64(m.Total) * 100.0
 }
 
-func (m *Memory) PercentFree() float64 {
+func (m *MemoryInfo) PercentFree() float64 {
 	return float64(m.Free) / float64(m.Total) * 100.0
 }
 
-func (m *Memory) PercentSwapUsed() float64 {
+func (m *MemoryInfo) PercentSwapUsed() float64 {
 	return float64(m.SwapUsed) / float64(m.SwapTotal) * 100.0
 }
 
-func (m *Memory) PercentSwapFree() float64 {
+func (m *MemoryInfo) PercentSwapFree() float64 {
 	return float64(m.SwapFree) / float64(m.SwapTotal) * 100.0
 }
 
-func MemoryInfo() (*Memory, error) {
-	mem := &Memory{}
+func Memory() (*MemoryInfo, error) {
+	mem := &MemoryInfo{}
 
 	file, err := os.Open("/proc/meminfo")
 	if err != nil {

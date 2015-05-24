@@ -14,7 +14,7 @@ const (
 	cpuMaxFreqPath = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
 )
 
-type CPU struct {
+type CPUInfo struct {
 	Name        string
 	Model       uint64
 	Family      uint64
@@ -29,7 +29,7 @@ type CPU struct {
 	SocketCount uint64
 }
 
-type CPUUsage struct {
+type CPUStat struct {
 	Total     uint64
 	User      uint64
 	Nice      uint64
@@ -43,10 +43,10 @@ type CPUUsage struct {
 	GuestNice uint64
 }
 
-func CPUInfo() (*CPU, error) {
-	var cpu = &CPU{}
+func CPU() (*CPUInfo, error) {
+	var cpu = &CPUInfo{}
 
-	// read cpu max frequency
+	// read CPU max frequency
 	minFreq, err := readSingleValueFile(cpuMinFreqPath)
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func CPUInfo() (*CPU, error) {
 		return nil, err
 	}
 
-	// read cpu min frequency
+	// read CPU min frequency
 	maxFreq, err := readSingleValueFile(cpuMaxFreqPath)
 	if err != nil {
 		return nil, err
@@ -185,15 +185,12 @@ func CPUInfo() (*CPU, error) {
 	return cpu, nil
 }
 
-func CPUUsageInfo() (*CPUUsage, []*CPUUsage, error) {
+func CPUUsage() (usageGlobal *CPUStat, usagePerCore []*CPUStat, err error) {
 	file, err := os.Open(cpuStatPath)
 	if err != nil {
 		return nil, nil, err
 	}
 	defer file.Close()
-
-	var globalUsage *CPUUsage
-	var usagePerCore []*CPUUsage
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -207,8 +204,7 @@ func CPUUsageInfo() (*CPUUsage, []*CPUUsage, error) {
 			return nil, nil, err
 		}
 
-		usage := &CPUUsage{}
-
+		usage := &CPUStat{}
 		usage.User, err = strconv.ParseUint(fields[1], 10, 64)
 		if err != nil {
 			return nil, nil, err
@@ -257,24 +253,21 @@ func CPUUsageInfo() (*CPUUsage, []*CPUUsage, error) {
 			usage.Guest + usage.GuestNice
 
 		if fields[0] == "cpu" {
-			globalUsage = usage
+			usageGlobal = usage
 			continue
 		}
 
 		usagePerCore = append(usagePerCore, usage)
 	}
 
-	if globalUsage == nil || len(usagePerCore) == 0 {
-		return nil, nil, ErrInvalidFileFormat
-	}
 	if err = scanner.Err(); err != nil {
 		return nil, nil, err
 	}
 
-	return globalUsage, usagePerCore, nil
+	return
 }
 
-func PercentCPUUsed(firstSample *CPUUsage, secondSample *CPUUsage) float64 {
+func CPULoadPercent(firstSample *CPUStat, secondSample *CPUStat) float64 {
 	if firstSample == nil || secondSample == nil {
 		return 0.0
 	}
@@ -297,5 +290,5 @@ func PercentCPUUsed(firstSample *CPUUsage, secondSample *CPUUsage) float64 {
 		deltaIdle = secondSample.Idle
 	}
 
-	return float64(deltaTotal-deltaIdle) / float64(deltaTotal) * 100.0
+	return float64(deltaTotal-deltaIdle) / float64(deltaTotal) * 100
 }
