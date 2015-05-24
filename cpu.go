@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	cpuStatPath    = "/proc/stat"
 	cpuInfoPath    = "/proc/cpuinfo"
 	cpuMinFreqPath = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq"
 	cpuMaxFreqPath = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
@@ -26,6 +27,20 @@ type CPU struct {
 	CoreCount   uint64
 	ThreadCount uint64
 	SocketCount uint64
+}
+
+type CPUUsage struct {
+	Total     uint64
+	User      uint64
+	Nice      uint64
+	System    uint64
+	Idle      uint64
+	IOWait    uint64
+	IRQ       uint64
+	SoftIRQ   uint64
+	Steal     uint64
+	Guest     uint64
+	GuestNice uint64
 }
 
 func CPUInfo() (*CPU, error) {
@@ -168,4 +183,119 @@ func CPUInfo() (*CPU, error) {
 	cpu.SocketCount = uint64(len(sockets))
 
 	return cpu, nil
+}
+
+func CPUUsageInfo() (*CPUUsage, []*CPUUsage, error) {
+	file, err := os.Open(cpuStatPath)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer file.Close()
+
+	var globalUsage *CPUUsage
+	var usagePerCore []*CPUUsage
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if !strings.HasPrefix(line, "cpu") {
+			continue
+		}
+
+		fields := strings.Fields(line)
+		if len(fields) != 11 {
+			return nil, nil, err
+		}
+
+		usage := &CPUUsage{}
+
+		usage.User, err = strconv.ParseUint(fields[1], 10, 64)
+		if err != nil {
+			return nil, nil, err
+		}
+		usage.Nice, err = strconv.ParseUint(fields[2], 10, 64)
+		if err != nil {
+			return nil, nil, err
+		}
+		usage.System, err = strconv.ParseUint(fields[3], 10, 64)
+		if err != nil {
+			return nil, nil, err
+		}
+		usage.Idle, err = strconv.ParseUint(fields[4], 10, 64)
+		if err != nil {
+			return nil, nil, err
+		}
+		usage.IOWait, err = strconv.ParseUint(fields[5], 10, 64)
+		if err != nil {
+			return nil, nil, err
+		}
+		usage.IRQ, err = strconv.ParseUint(fields[6], 10, 64)
+		if err != nil {
+			return nil, nil, err
+		}
+		usage.SoftIRQ, err = strconv.ParseUint(fields[7], 10, 64)
+		if err != nil {
+			return nil, nil, err
+		}
+		usage.Steal, err = strconv.ParseUint(fields[8], 10, 64)
+		if err != nil {
+			return nil, nil, err
+		}
+		usage.Guest, err = strconv.ParseUint(fields[9], 10, 64)
+		if err != nil {
+			return nil, nil, err
+		}
+		usage.GuestNice, err = strconv.ParseUint(fields[10], 10, 64)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		usage.User -= usage.Guest
+		usage.Nice -= usage.GuestNice
+		usage.Total = usage.User + usage.Nice + usage.System + usage.Idle +
+			usage.IOWait + usage.IRQ + usage.SoftIRQ + usage.Steal +
+			usage.Guest + usage.GuestNice
+
+		if fields[0] == "cpu" {
+			globalUsage = usage
+			continue
+		}
+
+		usagePerCore = append(usagePerCore, usage)
+	}
+
+	if globalUsage == nil || len(usagePerCore) == 0 {
+		return nil, nil, ErrInvalidFileFormat
+	}
+	if err = scanner.Err(); err != nil {
+		return nil, nil, err
+	}
+
+	return globalUsage, usagePerCore, nil
+}
+
+func PercentCPUUsed(firstSample *CPUUsage, secondSample *CPUUsage) float64 {
+	if firstSample == nil || secondSample == nil {
+		return 0.0
+	}
+	if firstSample.Total == 0 && secondSample.Total == 0 {
+		return 0.0
+	}
+
+	if firstSample.Total > secondSample.Total {
+		firstSample, secondSample = secondSample, firstSample
+	}
+
+	deltaTotal := secondSample.Total - firstSample.Total
+	if deltaTotal == 0 {
+		deltaTotal = secondSample.Total
+	}
+
+	deltaIdle := (secondSample.Idle + secondSample.IOWait) -
+		(firstSample.Idle + firstSample.IOWait)
+	if deltaIdle == 0 {
+		deltaIdle = secondSample.Idle
+	}
+
+	return float64(deltaTotal-deltaIdle) / float64(deltaTotal) * 100.0
 }
