@@ -29,7 +29,7 @@ type CPUInfo struct {
 	SocketCount uint64
 }
 
-type CPUStat struct {
+type CPUStatInfo struct {
 	Total     uint64
 	User      uint64
 	Nice      uint64
@@ -185,7 +185,7 @@ func CPU() (*CPUInfo, error) {
 	return cpu, nil
 }
 
-func CPUUsage() (usageGlobal *CPUStat, usagePerCore []*CPUStat, err error) {
+func CPUStat() (statTotal *CPUStatInfo, statCores []*CPUStatInfo, err error) {
 	file, err := os.Open(cpuStatPath)
 	if err != nil {
 		return nil, nil, err
@@ -204,60 +204,59 @@ func CPUUsage() (usageGlobal *CPUStat, usagePerCore []*CPUStat, err error) {
 			return nil, nil, err
 		}
 
-		usage := &CPUStat{}
-		usage.User, err = strconv.ParseUint(fields[1], 10, 64)
+		stat := &CPUStatInfo{}
+		stat.User, err = strconv.ParseUint(fields[1], 10, 64)
 		if err != nil {
 			return nil, nil, err
 		}
-		usage.Nice, err = strconv.ParseUint(fields[2], 10, 64)
+		stat.Nice, err = strconv.ParseUint(fields[2], 10, 64)
 		if err != nil {
 			return nil, nil, err
 		}
-		usage.System, err = strconv.ParseUint(fields[3], 10, 64)
+		stat.System, err = strconv.ParseUint(fields[3], 10, 64)
 		if err != nil {
 			return nil, nil, err
 		}
-		usage.Idle, err = strconv.ParseUint(fields[4], 10, 64)
+		stat.Idle, err = strconv.ParseUint(fields[4], 10, 64)
 		if err != nil {
 			return nil, nil, err
 		}
-		usage.IOWait, err = strconv.ParseUint(fields[5], 10, 64)
+		stat.IOWait, err = strconv.ParseUint(fields[5], 10, 64)
 		if err != nil {
 			return nil, nil, err
 		}
-		usage.IRQ, err = strconv.ParseUint(fields[6], 10, 64)
+		stat.IRQ, err = strconv.ParseUint(fields[6], 10, 64)
 		if err != nil {
 			return nil, nil, err
 		}
-		usage.SoftIRQ, err = strconv.ParseUint(fields[7], 10, 64)
+		stat.SoftIRQ, err = strconv.ParseUint(fields[7], 10, 64)
 		if err != nil {
 			return nil, nil, err
 		}
-		usage.Steal, err = strconv.ParseUint(fields[8], 10, 64)
+		stat.Steal, err = strconv.ParseUint(fields[8], 10, 64)
 		if err != nil {
 			return nil, nil, err
 		}
-		usage.Guest, err = strconv.ParseUint(fields[9], 10, 64)
+		stat.Guest, err = strconv.ParseUint(fields[9], 10, 64)
 		if err != nil {
 			return nil, nil, err
 		}
-		usage.GuestNice, err = strconv.ParseUint(fields[10], 10, 64)
+		stat.GuestNice, err = strconv.ParseUint(fields[10], 10, 64)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		usage.User -= usage.Guest
-		usage.Nice -= usage.GuestNice
-		usage.Total = usage.User + usage.Nice + usage.System + usage.Idle +
-			usage.IOWait + usage.IRQ + usage.SoftIRQ + usage.Steal +
-			usage.Guest + usage.GuestNice
+		stat.Total = stat.User + stat.Nice + stat.System + stat.Idle +
+			stat.IOWait + stat.IRQ + stat.SoftIRQ + stat.Steal
+		stat.User -= stat.Guest
+		stat.Nice -= stat.GuestNice
 
 		if fields[0] == "cpu" {
-			usageGlobal = usage
+			statTotal = stat
 			continue
 		}
 
-		usagePerCore = append(usagePerCore, usage)
+		statCores = append(statCores, stat)
 	}
 
 	if err = scanner.Err(); err != nil {
@@ -267,7 +266,7 @@ func CPUUsage() (usageGlobal *CPUStat, usagePerCore []*CPUStat, err error) {
 	return
 }
 
-func CPULoadPercent(firstSample *CPUStat, secondSample *CPUStat) float64 {
+func CPUUsagePercent(firstSample, secondSample *CPUStatInfo) float64 {
 	if firstSample == nil || secondSample == nil {
 		return 0.0
 	}
