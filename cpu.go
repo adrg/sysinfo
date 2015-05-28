@@ -308,27 +308,23 @@ func CPUTotalUsage() (uint64, error) {
 	return usage, nil
 }
 
-func CPUUsagePercent(firstSample, secondSample *CPUStatInfo) float64 {
-	if firstSample == nil || secondSample == nil {
-		return 0.0
-	}
-	if firstSample.Total == 0 && secondSample.Total == 0 {
+func CPUUsagePercent(a, b *CPUStatInfo) float64 {
+	if a == nil || b == nil || (a.Total == 0 && b.Total == 0) {
 		return 0.0
 	}
 
-	if firstSample.Total > secondSample.Total {
-		firstSample, secondSample = secondSample, firstSample
+	if a.Total > b.Total {
+		a, b = b, a
 	}
 
-	deltaTotal := secondSample.Total - firstSample.Total
+	deltaTotal := b.Total - a.Total
 	if deltaTotal == 0 {
-		deltaTotal = secondSample.Total
+		deltaTotal = b.Total
 	}
 
-	deltaIdle := (secondSample.Idle + secondSample.IOWait) -
-		(firstSample.Idle + firstSample.IOWait)
+	deltaIdle := (b.Idle + b.IOWait) - (a.Idle + a.IOWait)
 	if deltaIdle == 0 {
-		deltaIdle = secondSample.Idle
+		deltaIdle = b.Idle
 	}
 
 	return float64(deltaTotal-deltaIdle) / float64(deltaTotal) * 100
