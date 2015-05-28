@@ -201,7 +201,7 @@ func CPUStat() (statTotal *CPUStatInfo, statCores []*CPUStatInfo, err error) {
 
 		fields := strings.Fields(line)
 		if len(fields) != 11 {
-			return nil, nil, err
+			return nil, nil, ErrInvalidFileFormat
 		}
 
 		stat := &CPUStatInfo{}
@@ -264,6 +264,48 @@ func CPUStat() (statTotal *CPUStatInfo, statCores []*CPUStatInfo, err error) {
 	}
 
 	return
+}
+
+func CPUTotalUsage() (uint64, error) {
+	var usage uint64
+
+	file, err := os.Open(cpuStatPath)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if !strings.HasPrefix(line, "cpu") {
+			continue
+		}
+
+		fields := strings.Fields(line)
+		if len(fields) != 11 {
+			return 0, ErrInvalidFileFormat
+		}
+
+		if fields[0] != "cpu" {
+			continue
+		}
+
+		for _, field := range fields[1:] {
+			val, err := strconv.ParseUint(field, 10, 64)
+			if err != nil {
+				return 0, err
+			}
+
+			usage += val
+		}
+	}
+
+	if err = scanner.Err(); err != nil {
+		return 0, err
+	}
+
+	return usage, nil
 }
 
 func CPUUsagePercent(firstSample, secondSample *CPUStatInfo) float64 {
