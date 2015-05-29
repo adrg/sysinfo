@@ -32,8 +32,8 @@ type ProcessInfo struct {
 }
 
 type ProcessMemoryInfo struct {
-	Size         uint64
-	Peak         uint64
+	Virtual      uint64
+	PeakVirtual  uint64
 	Resident     uint64
 	PeakResident uint64
 	Locked       uint64
@@ -216,13 +216,13 @@ func readProcStatusFile(pid uint64, proc *ProcessInfo) error {
 			}
 
 		case "vmpeak":
-			proc.Memory.Peak, err = strconv.ParseUint(val, 10, 64)
+			proc.Memory.PeakVirtual, err = strconv.ParseUint(val, 10, 64)
 			if err != nil {
 				return err
 			}
 
 		case "vmsize":
-			proc.Memory.Size, err = strconv.ParseUint(val, 10, 64)
+			proc.Memory.Virtual, err = strconv.ParseUint(val, 10, 64)
 			if err != nil {
 				return err
 			}
