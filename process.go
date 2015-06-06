@@ -365,7 +365,7 @@ func readProcCmdlineFile(pid uint64, proc *ProcessInfo) error {
 		return nil
 	}
 
-	fields := strings.Fields(cmd)
+	fields := strings.Fields(strings.Replace(cmd, "\u0000", " ", -1))
 	if len(fields) == 0 {
 		return nil
 	}
